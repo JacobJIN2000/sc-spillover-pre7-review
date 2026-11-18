@@ -1,0 +1,2 @@
+series,ATT_hours,mean_absolute_error,RMSE,mean_actual,mean_synthetic,bootstrap_SE,CI95_lower,CI95_upper,relative_day,n_events,n_clusters,fit_days,bootstrap_reps,seed
+different,0.109364931298411,13.9161473951242,20.0684018189946,384.985984242199,384.8766193109,0.498381446235558,-0.831047900662523,1.09979911881555,-2,1791,682,"-7,-6,-5,-4,-3",1000,2026
