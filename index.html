@@ -53,13 +53,15 @@ select.replaceChildren();for(const series of choices)select.add(new Option(serie
 select.value=choices.includes(previous)?previous:choices.includes('same')?'same':choices[0];
 $('leaveout-series-wrap').hidden=choices.length<2;
 const rows=all.filter(r=>r.series===select.value).sort((a,b)=>Number(a.relative_day)-Number(b.relative_day));
+const axisValues=(o.leaveout_m2?.daily||[]).filter(r=>r.series===select.value).flatMap(r=>[Number(r.mean_actual),Number(r.mean_synthetic)]).filter(Number.isFinite);
+const low=Math.min(...axisValues),high=Math.max(...axisValues),middle=(low+high)/2,halfSpan=Math.max(2.5,(high-low)/2+0.25);
 const days=[-7,-6,-5,-4,-3,-2,-1,...Array.from({length:n},(_,i)=>i)],byDay=new Map(rows.map(r=>[Number(r.relative_day),r]));
 const traces=[['mean_actual','Observed','#0072B2'],['mean_synthetic','Synthetic','#D55E00']].map(([field,name,color])=>({
   type:'scatter',mode:'lines+markers',name,x:days,y:days.map(d=>byDay.has(d)?Number(byDay.get(d)[field]):null),
   connectgaps:false,line:{color,width:2.5},marker:{color,size:days.map(d=>d===-2||d===0?10:6)},
   hovertemplate:'Day %{x}<br>'+name+': %{y:.3f} busy hours<extra></extra>'
 }));
-Plotly.react('leaveout-trajectory-chart',traces,{height:460,margin:{t:55,r:25,b:65,l:80},paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'system-ui',color:'#183044'},xaxis:{title:'Relative day',tickvals:days.filter(d=>d!==-1),range:[-7.4,Math.max(.5,n-.6)],gridcolor:'#edf1f5'},yaxis:{title:'Mean busy hours / day',gridcolor:'#edf1f5'},legend:{orientation:'h',y:1.18},shapes:[-2,0].map(x=>({type:'line',x0:x,x1:x,y0:0,y1:1,yref:'paper',line:{color:'#aab5bd',width:1,dash:'dot'}})),annotations:[{x:-2,y:1.04,text:'Held out',showarrow:false,xref:'x',yref:'paper'},{x:0,y:1.04,text:'Disruption',showarrow:false,xref:'x',yref:'paper'}]},{responsive:true,displaylogo:false});
+Plotly.react('leaveout-trajectory-chart',traces,{height:460,margin:{t:55,r:25,b:65,l:80},paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'system-ui',color:'#183044'},xaxis:{title:'Relative day',tickvals:days.filter(d=>d!==-1),range:[-7.4,Math.max(.5,n-.6)],gridcolor:'#edf1f5'},yaxis:{title:'Mean busy hours / day',range:[middle-halfSpan,middle+halfSpan],gridcolor:'#edf1f5'},legend:{orientation:'h',y:1.18},shapes:[-2,0].map(x=>({type:'line',x0:x,x1:x,y0:0,y1:1,yref:'paper',line:{color:'#aab5bd',width:1,dash:'dot'}})),annotations:[{x:-2,y:1.04,text:'Held out',showarrow:false,xref:'x',yref:'paper'},{x:0,y:1.04,text:'Disruption',showarrow:false,xref:'x',yref:'paper'}]},{responsive:true,displaylogo:false});
 const count=holdout.find(r=>r.series===select.value)?.n_events;
 $('leaveout-sample').textContent=count?'Retained events: '+Number(count).toLocaleString('en-US'):'';
 const ci=r=>'['+fmt(r.CI95_lower)+', '+fmt(r.CI95_upper)+']';
