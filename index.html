@@ -18,7 +18,7 @@
 <section class="tab" id="diagnostics" hidden><div class="panel"><h2>Pre-treatment fit</h2><img id="mse" class="figure" style="max-width:680px;margin:0 auto" alt="Pre-treatment MSE before and after fit filtering" loading="lazy"></div><div class="panel"><h2>Spatial distribution</h2><img id="spatial" class="figure" style="max-width:680px;margin:0 auto" alt="Distance, time or neighborhood member count distribution" loading="lazy"></div></section>
 <section class="tab" id="saved"><div class="panel"><h2>Five duration panels · Selected outcome</h2><img id="duration-figure" class="figure" alt="Spillover effects for minimum durations one through five days" loading="lazy"></div><details><summary>Sample retention by duration</summary><div id="counts" class="table-wrap" style="margin-top:12px"></div></details></section>
 
-<section class="tab" id="holdout" hidden><h2>Predicting day −2</h2><p class="muted">SC weights are fitted on days −7 to −3. Day −2 is held out: prediction error = observed − synthetic busy hours. The pre-fit filter uses only the five fitting days.</p><div class="panel"><div id="holdout-chart"></div></div><div id="holdout-table" class="table-wrap"></div><h2>Daily effects after disruption</h2><label for="leaveout-duration">Minimum disruption duration</label><select id="leaveout-duration" style="max-width:230px"><option value="1">≥1 day</option><option value="2">≥2 days</option><option value="3">≥3 days</option><option value="4">≥4 days</option><option value="5">≥5 days</option></select><p class="muted">For duration ≥n, the same retained events are used from day 0 through day n−1.</p><div class="panel"><div id="leaveout-daily-chart"></div></div><div id="leaveout-daily-table" class="table-wrap"></div><details><summary>Day 0 vs original Pre7</summary><p class="muted">The pre-fit filter is recalculated, so retained event counts can differ.</p><div id="holdout-day0" class="table-wrap"></div></details></section>
+<section class="tab" id="holdout" hidden><label for="leaveout-duration">Minimum disruption duration</label><select id="leaveout-duration" style="max-width:230px"><option value="1">≥1 day</option><option value="2">≥2 days</option><option value="3">≥3 days</option><option value="4">≥4 days</option><option value="5">≥5 days</option></select><p class="muted">For each duration ≥n, the day −2 check and days 0 through n−1 use the same retained events.</p><h2>Predicting day −2</h2><p class="muted">SC weights are fitted on days −7 to −3. Day −2 is held out: prediction error = observed − synthetic busy hours. The pre-fit filter uses only the five fitting days.</p><div class="panel"><div id="holdout-chart"></div></div><div id="holdout-table" class="table-wrap"></div><h2>Daily effects after disruption</h2><div class="panel"><div id="leaveout-daily-chart"></div></div><div id="leaveout-daily-table" class="table-wrap"></div><details><summary>Day 0 vs original Pre7 (duration ≥1)</summary><p class="muted">The pre-fit filter is recalculated, so retained event counts can differ.</p><div id="holdout-day0" class="table-wrap"></div></details></section>
 
 
 
@@ -47,7 +47,7 @@ history.replaceState(null,'','#'+new URLSearchParams({scenario,design,outcome:mo
 
 function renderHoldout(){
 const o=DATA.results[$('scenario').value+'/'+$('design').value].outcomes[$('outcome').value];
-const rows=o.leaveout_m2?.holdout||[],day0=o.leaveout_m2?.day0||[];
+const n=Number($('leaveout-duration').value),rows=(o.leaveout_m2?.holdout_by_duration||[]).filter(r=>Number(r.min_duration)===n),day0=o.leaveout_m2?.day0||[];
 const colors={same:'#009E73',different:'#D55E00',total:'#0072B2','same - different':'#AA4499'};
 const ci=r=>'['+fmt(r.CI95_lower)+', '+fmt(r.CI95_upper)+']';
 table($('holdout-table'),rows.map(r=>({series:r.series,error:fmt(r.ATT_hours),mae:fmt(r.mean_absolute_error),rmse:fmt(r.RMSE),ci:ci(r),events:r.n_events})),[['series','Outcome'],['error','Mean error'],['mae','MAE'],['rmse','RMSE'],['ci','95% CI'],['events','Events']]);
@@ -64,7 +64,7 @@ const traces=[...new Set(rows.map(r=>r.series))].map(series=>{const p=rows.filte
 Plotly.react('leaveout-daily-chart',traces,{height:390,margin:{t:35,r:25,b:60,l:75},paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'system-ui',color:'#183044'},xaxis:{title:'Relative day',tickvals:Array.from({length:n},(_,i)=>i),range:[-.3,Math.max(.7,n-.7)]},yaxis:{title:'ATT (busy hours / day)',zeroline:true,zerolinecolor:'#8793a0',gridcolor:'#edf1f5'},legend:{orientation:'h',y:1.13}},{responsive:true,displaylogo:false});
 table($('leaveout-daily-table'),rows.map(r=>({series:r.series,day:r.relative_day,att:fmt(r.ATT_hours),ci:'['+fmt(r.CI95_lower)+', '+fmt(r.CI95_upper)+']',events:r.n_events})),[['series','Outcome'],['day','Day'],['att','ATT'],['ci','95% CI'],['events','Events']]);
 }
-$('leaveout-duration').addEventListener('change',renderLeaveoutDaily);
+$('leaveout-duration').addEventListener('change',renderHoldout);
 
 function renderAverage(){
 const scenario=$('scenario').value,design=$('design').value,mode=$('outcome').value;
