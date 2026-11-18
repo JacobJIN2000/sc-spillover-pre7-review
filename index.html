@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="EV charging spillover estimates using pre-treatment days −7, −6, −5, −4, −3, −2."><title>EV Charging · Spillover Review · Pre7</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#182b3e;background:#f5f7fa;font-size:15px}*{box-sizing:border-box}body{margin:0}aside{position:fixed;width:280px;height:100vh;overflow:auto;background:#102d40;color:#edf5f9;padding:30px 24px}aside h2{font-size:22px;margin:0 0 6px}.muted{color:#637889;font-size:13px;line-height:1.6}aside .muted{color:#b3c7d5}label{display:block;font-size:13px;margin:24px 0 8px;font-weight:600}select{width:100%;padding:11px 8px;background:white;color:#183044;border:1px solid #ccd9e2;border-radius:6px;font:inherit;font-size:13px}main{margin-left:280px;padding:42px 44px;max-width:1750px}h1{font-size:32px;letter-spacing:-1px;margin:0 0 12px}.eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#278174;font-weight:700;margin-bottom:14px}h2{font-size:19px;margin:24px 0 12px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:26px 0}.metric{padding:20px;background:white;border:1px solid #e1e8ee;border-radius:8px}.metric span{display:block;font-size:12px;color:#637889;margin-bottom:9px}.metric strong{font-size:27px;font-weight:600}nav{display:flex;gap:22px;border-bottom:1px solid #d8e2e9;margin:26px 0 22px;overflow:auto}button{font:inherit;cursor:pointer}nav button{border:0;background:none;color:#607587;white-space:nowrap;padding:12px 0;border-bottom:3px solid transparent}nav button.active{color:#126b60;border-bottom-color:#126b60}.panel{background:white;padding:24px;border:1px solid #e1e8ee;border-radius:8px;margin-bottom:20px}.tab[hidden]{display:none}details{font-size:13px;line-height:1.8;margin:20px 0;color:#536b7c}summary{cursor:pointer;color:#183044;font-weight:600}table{width:100%;border-collapse:collapse;font-size:13px;background:white}th{text-align:left;color:#536b7c;background:#f5f8fb}th,td{padding:12px;border-bottom:1px solid #e4ebf0;white-space:nowrap}.table-wrap{overflow:auto}.figure{width:100%;display:block}a{color:#126b60}.downloads{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.downloads a{font-size:13px;border:1px solid #c7dbd7;padding:10px 12px;border-radius:6px;text-decoration:none}.check{margin:0 0 10px;color:#435e70}footer{margin-top:28px;color:#718695;font-size:12px}#chart{min-height:440px}#error{color:#b34035} @media(max-width:850px){aside{position:static;width:100%;height:auto;padding:24px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}aside label{margin-top:16px}main{margin:0;padding:26px 18px}.metrics{gap:8px}.metric{padding:12px}.metric strong{font-size:22px}h1{font-size:27px}.panel{padding:14px}nav{gap:18px}}
+</style><script src="plotly.min.js" defer></script></head>
+<body><aside><h2>Spillover Review · Pre7</h2><div class="controls">
+<div><label for="scenario">Configuration</label><select id="scenario"></select></div>
+<div><label for="design">Spillover construction</label><select id="design"><option value="closest">Closest station</option><option value="nearby">Neighborhood total</option></select></div>
+<div><label for="outcome">Network outcome</label><select id="outcome"><option value="same">Same network</option><option value="different">Different network</option><option value="total">All networks</option><option value="common">Common · Same vs different</option></select></div>
+</div>
+</aside>
+<main><details style="margin:0 0 24px"><summary>Method diagrams &amp; formulas</summary><img class="figure" style="margin-top:16px" src="assets/spillover_methods_side_by_side.png" alt="Closest station and nearby area diagrams with their effect formulas"></details><details><summary>Network</summary><ul><li><strong>Same:</strong> Neighbors on the center station’s network.</li><li><strong>Different:</strong> Neighbors on other networks.</li><li><strong>Total:</strong> All networks: one nearest station for Closest; all neighbors summed for Nearby.</li><li><strong>Common:</strong> Compare Same and Different using the same retained events.</li></ul></details><details><summary>Parameter details</summary><ul><li><strong>Pre-treatment:</strong> Days −7, −6, −5, −4, −3, −2; day −1 excluded.</li><li><strong>Baseline:</strong> Driving distance ≤5 km; all focal networks.</li><li><strong>10 km:</strong> Increase the driving-distance limit to 10 km.</li><li><strong>EVgo only:</strong> Keep events whose focal station A belongs to EVgo.</li><li><strong>Straight-line distance:</strong> Use straight-line distance to select neighbors; limit ≤5 km.</li><li><strong>20-minute driving time:</strong> Select by estimated driving time; limit ≤20 minutes.</li></ul></details><p id="error" role="alert"></p>
+
+
+<p class="muted">Missing donor weight per day: &lt;1% omit without rescaling; 1–5% renormalize; &gt;5% or missing treated outcome: omit the day.</p><nav aria-label="Result sections"><button class="active" data-tab="saved">Saved duration figure</button><button data-tab="fullpost">Average ATT</button><button data-tab="diagnostics">Fit & spatial diagnostics</button><button data-tab="measure">Spillover measure · Baseline</button></nav>
+
+<section class="tab" id="fullpost" hidden><h2>Average ATT</h2><label for="average-window">Observation window</label><select id="average-window"><option value="entire">Entire disruption</option><option value="first_n">First n days (n = 1–5)</option></select><p id="average-note" class="muted"></p><div class="panel"><div id="average-chart"></div></div><div id="average-tables"></div><details id="duration-length-details"><summary>Event disruption length</summary><label for="duration-length-min">Minimum disruption duration</label><select id="duration-length-min"><option value="1">≥1 day</option><option value="2">≥2 days</option><option value="3">≥3 days</option><option value="4">≥4 days</option><option value="5">≥5 days</option></select><p id="duration-length-stats" class="muted"></p><div id="duration-length-chart"></div></details></section>
+<section class="tab" id="diagnostics" hidden><div class="panel"><h2>Pre-treatment fit</h2><img id="mse" class="figure" style="max-width:680px;margin:0 auto" alt="Pre-treatment MSE before and after fit filtering" loading="lazy"></div><div class="panel"><h2>Spatial distribution</h2><img id="spatial" class="figure" style="max-width:680px;margin:0 auto" alt="Distance, time or neighborhood member count distribution" loading="lazy"></div></section>
+<section class="tab" id="saved"><div class="panel"><h2>Five duration panels · Selected outcome</h2><img id="duration-figure" class="figure" alt="Spillover effects for minimum durations one through five days" loading="lazy"></div><details><summary>Sample retention by duration</summary><div id="counts" class="table-wrap" style="margin-top:12px"></div></details></section>
+
+
+
+<section class="tab" id="measure" hidden>
+<h2>Spillover measure · Baseline</h2><p class="muted">Nearby Same · 5 km · Fixed baseline analysis</p>
+<label for="measure-duration">Minimum disruption duration</label><select id="measure-duration"><option value="1">≥1 day · Day 0</option><option value="2">≥2 days · Days 0–1</option><option value="3">≥3 days · Days 0–2</option><option value="4">≥4 days · Days 0–3</option><option value="5">≥5 days · Days 0–4</option></select>
+<p id="measure-counts" class="muted"></p>
+<h2>Average over the selected window</h2><div id="measure-average-chart"></div><div id="measure-att" class="table-wrap"></div>
+<h2>Share of lost plug-hours</h2><div id="measure-share-chart"></div><div id="measure-shares" class="table-wrap"></div>
+<h2>Daily effects</h2><div id="measure-daily-chart"></div>
+<details><summary>Definitions</summary><p>Plug: observed use minus its available pre-day mean (−7, −6, −5, −4, −3, −2). Station and Nearby Same: observed minus synthetic control. Other plugs = station − plug.</p><p>Share = component change ÷ lost plug-hours over the same events and days. This combines before–after and SC measures. 95% CIs use 1,000 joint focal-station cluster bootstrap draws.</p></details>
+<details><summary>All duration windows</summary><img id="measure-outcome" class="figure" alt="Average changes over the first n days" loading="lazy"><img id="measure-share-figure" class="figure" alt="Shares of lost plug-hours over the first n days" loading="lazy"><img id="measure-daily" class="figure" alt="Daily effects for five duration windows" loading="lazy"></details>
+</section></main>
+<script>
+const $=id=>document.getElementById(id);
+const labels={baseline:'Baseline · Driving distance ≤5 km',radius_10km:'Robustness · Driving distance ≤10 km',evgo_only:'Robustness · EVgo focal stations only',straight_line:'Robustness · Straight-line distance ≤5 km',travel_time_20min:'Robustness · Driving time ≤20 min'};
+let DATA;
+const fmt=x=>x!==''&&x!==null&&Number.isFinite(Number(x))?Number(x).toLocaleString('en-US',{maximumFractionDigits:3,minimumFractionDigits:3}):'—';
+function table(target,rows,columns){target.replaceChildren();if(!rows.length){target.textContent='No eligible results.';return}const t=document.createElement('table'),head=t.createTHead().insertRow();for(const [key,label] of columns){const th=document.createElement('th');th.textContent=label;head.append(th)}const body=t.createTBody();for(const row of rows){const tr=body.insertRow();for(const [key] of columns){const td=tr.insertCell();td.textContent=row[key]??'—'}}target.append(t)}
+function render(){if(!DATA)return;renderMeasure();const scenario=$('scenario').value,design=$('design').value,mode=$('outcome').value,spec=DATA.settings.scenarios[scenario],o=DATA.results[scenario+'/'+design].outcomes[mode],base='results/'+spec.folder+'/'+design+'/'+mode+'/';
+const imageUrl=name=>base+name+'?v='+(o.figure_versions?.[name]||'axes5-v1');$('duration-figure').src=imageUrl('effect_by_duration.png');$('mse').src=imageUrl('pre_fit_mse.png');$('spatial').src=imageUrl('spatial_distribution.png');
+table($('counts'),o.counts,[['min_duration','Minimum duration (days)'],['n_duration_eligible','Duration-eligible events'],['n_missing_donor','Missing donor'],['n_retained','Retained events'],['n_clusters','Clusters']]);
+renderAverage();
+history.replaceState(null,'','#'+new URLSearchParams({scenario,design,outcome:mode,tab:document.querySelector('nav button.active')?.dataset.tab||'saved'}));}
+
+function renderAverage(){
+const scenario=$('scenario').value,design=$('design').value,mode=$('outcome').value;
+const o=DATA.results[scenario+'/'+design].outcomes[mode],first=$('average-window').value==='first_n';
+const rows=(first?o.first_n_average:o.full_post_duration)||[];
+$('average-note').textContent=first?'Duration ≥n: average days 0 to n−1. Events must have computable outcomes on all n days.':'Duration ≥n: average all available days across each event’s entire disruption.';
+averageChart(rows,first);$('average-tables').replaceChildren();
+for(const series of ['same','different','total','same - different']){
+ const selected=rows.filter(r=>r.series===series).sort((a,b)=>a.min_duration-b.min_duration);if(!selected.length)continue;
+ if(mode==='common'){const h=document.createElement('h2');h.textContent=series==='same - different'?'Same − Different':series==='same'?'Same network':'Different network';$('average-tables').append(h)}
+ const wrapper=document.createElement('div');wrapper.className='table-wrap';$('average-tables').append(wrapper);
+ const columns=[['duration','Disruption duration'],...(first?[['window','Observation window']]:[]),['att','ATT'],['sd','SD'],['ci','95% CI'],['events','Events']];
+ table(wrapper,selected.map(r=>({duration:'≥'+r.min_duration,window:'First '+r.min_duration+(Number(r.min_duration)===1?' day':' days'),att:fmt(r.ATT_hours),sd:fmt(r.bootstrap_SE),events:r.n_events,ci:r.CI95_lower&&r.CI95_upper?'['+fmt(r.CI95_lower)+', '+fmt(r.CI95_upper)+']':'—'})),columns);
+}
+if(!rows.length)$('average-tables').textContent='No saved averages.';
+renderDurationDistribution();
+}
+$('average-window').addEventListener('change',renderAverage);
+
+function renderDurationDistribution(){
+const o=DATA.results[$('scenario').value+'/'+$('design').value].outcomes[$('outcome').value];
+const window=$('average-window').value==='first_n'?'first_n':'entire',n=$('duration-length-min').value||'1';
+const rows=o.duration_distributions?.[window]?.[n]||[],count=rows.reduce((s,r)=>s+r.events,0);
+let cumulative=0,lower,upper;
+for(const r of rows){cumulative+=r.events;if(lower===undefined&&cumulative>=Math.floor((count+1)/2))lower=r.days;if(upper===undefined&&cumulative>=Math.ceil((count+1)/2))upper=r.days}
+const mean=count?rows.reduce((s,r)=>s+r.days*r.events,0)/count:null;
+$('duration-length-stats').textContent=count?'Events: '+count.toLocaleString('en-US')+' · Median: '+((lower+upper)/2)+' days · Mean: '+Number(mean.toFixed(2))+' days':'No retained events.';
+Plotly.react('duration-length-chart',[{type:'bar',x:rows.map(r=>r.days),y:rows.map(r=>r.events),width:.85,marker:{color:'#126b60'},hovertemplate:'Disruption length: %{x} days<br>Events: %{y}<extra></extra>'}],{height:340,margin:{t:15,r:20,b:60,l:65},paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'system-ui',color:'#183044'},xaxis:{title:'Actual disruption length (days)',rangemode:'tozero',gridcolor:'#edf1f5'},yaxis:{title:'Events',rangemode:'tozero',gridcolor:'#edf1f5'},showlegend:false},{responsive:true,displaylogo:false,toImageButtonOptions:{filename:'event-disruption-length'}});
+}
+$('duration-length-min').addEventListener('change',renderDurationDistribution);
+$('duration-length-details').addEventListener('toggle',()=>{if($('duration-length-details').open)Plotly.Plots.resize('duration-length-chart')});
+
+function averageChart(rows,first=false){const colors={same:'#009E73',different:'#D55E00',total:'#0072B2','same - different':'#AA4499'},number=x=>x!==''&&x!==null&&Number.isFinite(Number(x))?Number(x):null;const traces=[];for(const series of ['same','different','total','same - different']){const p=rows.filter(r=>r.series===series).sort((a,b)=>a.min_duration-b.min_duration);if(!p.length)continue;traces.push({x:p.map(r=>Number(r.min_duration)),y:p.map(r=>number(r.ATT_hours)),mode:'lines+markers',name:series,line:{color:colors[series],width:2},marker:{size:7},error_y:{type:'data',symmetric:false,array:p.map(r=>number(r.CI95_upper)===null?null:Number(r.CI95_upper)-Number(r.ATT_hours)),arrayminus:p.map(r=>number(r.CI95_lower)===null?null:Number(r.ATT_hours)-Number(r.CI95_lower)),visible:true,color:colors[series]},customdata:p.map(r=>[r.CI95_lower,r.CI95_upper,r.n_events]),hovertemplate:'Duration ≥%{x} days<br>ATT: %{y:.3f}<br>95% CI: [%{customdata[0]:.3f}, %{customdata[1]:.3f}]<br>Events: %{customdata[2]}<extra>%{fullData.name}</extra>'})}Plotly.react('average-chart',traces,{height:440,margin:{t:35,r:25,b:65,l:75},paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'system-ui',color:'#183044'},xaxis:{title:first?'Observation window (days)':'Minimum disruption duration (days)',tickvals:[1,2,3,4,5],ticktext:first?['1','2','3','4','5']:['≥1','≥2','≥3','≥4','≥5'],range:[.7,5.3],gridcolor:'#edf1f5'},yaxis:{title:'ATT (busy hours / day)',range:DATA.settings.effect_ylim,gridcolor:'#edf1f5',zerolinecolor:'#8793a0'},legend:{orientation:'h',y:1.14}},{responsive:true,displaylogo:false,toImageButtonOptions:{filename:first?'first-n-days-average':'entire-disruption-average'}})}
+
+
+function renderMeasure(){
+const m=DATA.spillover_measure;
+if(!m){$('measure-counts').textContent='Results are not yet available.';return}
+const n=Number($('measure-duration').value||1),c=m.counts.find(r=>Number(r.min_duration)===n);
+const base='results/baseline/spillover_measure/';
+const names={plug_change:'Focal plug',station_change:'Focal station',other_plugs_change:'Other plugs',nearby_same_change:'Nearby same network',within_station:'Within station',nearby_same:'Nearby same network'};
+const colors={plug_change:'#CC6677',station_change:'#4477AA',other_plugs_change:'#228833',nearby_same_change:'#AA3377',within_station:'#228833',nearby_same:'#AA3377'};
+const att=m.duration_att.filter(r=>Number(r.min_duration)===n),shares=m.duration_shares.filter(r=>Number(r.min_duration)===n);
+$('measure-counts').textContent='Days 0–'+(n-1)+' · Shared events: '+c.n_retained+' / '+c.n_start+' · Focal stations: '+c.n_clusters;
+const interval=r=>'['+fmt(r.CI95_lower)+', '+fmt(r.CI95_upper)+']';
+table($('measure-att'),att.map(r=>({outcome:names[r.outcome],att:fmt(r.ATT_hours),ci:interval(r),events:r.n_events})),[['outcome','Outcome'],['att','Change (hours/day)'],['ci','95% CI'],['events','Events']]);
+table($('measure-shares'),shares.map(r=>({component:names[r.component],share:fmt(r.share_percent),ci:interval(r)})),[['component','Component'],['share','Share (%)'],['ci','95% CI']]);
+const errors=(rows,value)=>({type:'data',symmetric:false,array:rows.map(r=>Number(r.CI95_upper)-Number(r[value])),arrayminus:rows.map(r=>Number(r[value])-Number(r.CI95_lower)),visible:true});
+const layout=y=>({height:340,margin:{t:20,r:25,b:65,l:75},paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'system-ui',color:'#183044'},yaxis:{title:y,gridcolor:'#edf1f5',zerolinecolor:'#8793a0'},showlegend:false});
+const options={responsive:true,displaylogo:false};
+Plotly.react('measure-average-chart',[{type:'bar',x:att.map(r=>names[r.outcome]),y:att.map(r=>Number(r.ATT_hours)),marker:{color:att.map(r=>colors[r.outcome])},error_y:errors(att,'ATT_hours'),hovertemplate:'%{x}<br>%{y:.3f} hours/day<extra></extra>'}],layout('Busy hours / day'),options);
+Plotly.react('measure-share-chart',[{type:'bar',x:shares.map(r=>names[r.component]),y:shares.map(r=>Number(r.share_percent)),marker:{color:shares.map(r=>colors[r.component])},error_y:errors(shares,'share_percent'),hovertemplate:'%{x}<br>%{y:.2f}%<extra></extra>'}],layout('Share (%)'),options);
+const traces=Object.keys(colors).filter(k=>k.endsWith('_change')).map((k,i)=>{
+ const rows=m.daily.filter(r=>r.outcome===k&&Number(r.min_duration)===n).sort((a,b)=>a.relative_day-b.relative_day);
+ return {x:rows.map(r=>Number(r.relative_day)+(i-1.5)*.08),y:rows.map(r=>Number(r.ATT_hours)),name:names[k],mode:'lines+markers',line:{color:colors[k]},error_y:errors(rows,'ATT_hours'),customdata:rows.map(r=>[Number(r.CI95_lower),Number(r.CI95_upper),Number(r.relative_day)]),hovertemplate:'Day %{customdata[2]}<br>%{y:.3f} hours/day<br>95% CI: [%{customdata[0]:.3f}, %{customdata[1]:.3f}]<extra>%{fullData.name}</extra>'};
+});
+Plotly.react('measure-daily-chart',traces,{...layout('Busy hours / day'),height:410,showlegend:true,legend:{orientation:'h',y:1.15},margin:{t:65,r:25,b:60,l:75},xaxis:{title:'Relative day',tickvals:Array.from({length:n},(_,i)=>i),range:[-.3,n-.7]}},options);
+for(const [id,file] of [['measure-outcome','duration_outcome_comparison.png'],['measure-share-figure','duration_spillover_shares.png'],['measure-daily','effect_by_duration.png']])$(id).src=base+file+'?v='+m.figures[file];
+}
+$('measure-duration').addEventListener('change',renderMeasure);
+for(const id of ['scenario','design','outcome'])$(id).addEventListener('change',render);
+for(const b of document.querySelectorAll('nav button'))b.addEventListener('click',()=>{for(const x of document.querySelectorAll('nav button'))x.classList.toggle('active',x===b);for(const t of document.querySelectorAll('.tab'))t.hidden=t.id!==b.dataset.tab;if(b.dataset.tab==='fullpost')Plotly.Plots.resize('average-chart');if(b.dataset.tab==='measure')for(const id of ['measure-average-chart','measure-share-chart','measure-daily-chart'])Plotly.Plots.resize(id);const q=new URLSearchParams(location.hash.slice(1));q.set('tab',b.dataset.tab);history.replaceState(null,'','#'+q)});
+window.addEventListener('DOMContentLoaded',async()=>{try{const response=await fetch('results.json', {cache:'no-store'});if(!response.ok)throw Error('Results could not be loaded.');DATA=await response.json();for(const key of Object.keys(DATA.settings.scenarios))$('scenario').add(new Option(labels[key]||key,key));const q=new URLSearchParams(location.hash.slice(1));for(const key of ['scenario','design','outcome'])if([...$(key).options].some(o=>o.value===q.get(key)))$(key).value=q.get(key);render();const tab=[...document.querySelectorAll('nav button')].find(b=>b.dataset.tab===q.get('tab'));if(tab)tab.click()}catch(error){$('error').textContent=error.message}});
+</script></body></html>

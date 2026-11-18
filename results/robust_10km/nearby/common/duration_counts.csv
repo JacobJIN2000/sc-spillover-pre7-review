@@ -1,0 +1,6 @@
+min_duration,n_day0_retained,n_duration_eligible,n_missing_target,n_missing_donor,n_retained,n_clusters
+1,913,913,0,0,913,408
+2,913,657,2,14,641,345
+3,913,522,1,16,506,303
+4,913,417,2,24,392,260
+5,913,364,2,25,338,231
